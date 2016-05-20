@@ -1,79 +1,73 @@
 module CuckooFilter
   class Filter
-    attr_accessor :buckets
     MAX_ATTEMPTS = 500
     DEFAULT_SIZE = 5
-    @max_attempts = MAX_ATTEMPTS
 
-    def initialize(bit_size: DEFAULT_SIZE)
-      @buckets = Array.new(bit_size) { 0 }
+    def initialize(bucket_size: DEFAULT_SIZE, max_attempts: MAX_ATTEMPTS)
+      @buckets = Array.new(bucket_size) { 0 }
+      @max_attempts = max_attempts
     end
 
     def insert(o)
       return if self.lookup(o)
+      (f,i1,i2) = hash_and_fingerprint(o)
+      return true if (replace(i1, f, 0) || replace(i2, f, 0))
+
+      raise CuckooFilter::FullError unless kick [i1,i2].sample, f
+      true
+    end
+
+    def hash_and_fingerprint(o)
       f = fingerprint o
       i1 = do_hash(o)
       i2 = (i1 ^ do_hash(f)) % @buckets.size
-      puts [f, i1, i2]
- 
-      if (@buckets[i1] == 0)
-        @buckets[i1] = f
-        return
-      end
-
-      if (@buckets[i2] == 0)
-        @buckets[i2] = f
-        return
-      end
-
-      raise CuckooFilter::FullError unless kick [i1,i2].sample, f
+      return f,i1,i2
     end
 
     def kick(bucket, f)
-      (0..MAX_ATTEMPTS).each do |x|
-        i = rand(@buckets.count)
+      (1 .. @max_attempts).each do
+        i = rand(@buckets.size)
         e = @buckets[i]
         @buckets[i] = f
         f = e
         i = (i ^ do_hash(f)) % @buckets.size
-        if @buckets[i] == 0
-          @buckets[i] = f
-          return true
-        end
-        
+        return true if replace(i, f, 0)    
       end
       false
     end
 
-    def lookup(obj)
-      f = fingerprint(obj)
-      i1 = do_hash(obj)
-      i2 = (i1 ^ do_hash(f)) % @buckets.size
+    def lookup(o)
+      (f,i1,i2) = hash_and_fingerprint(o)
       (@buckets[i1] == f) || (@buckets[i2] == f)
     end
 
-    def fingerprint(obj)
-      obj.hash 
+    def fingerprint(o)
+      o.hash 
     end
 
     def do_hash(f)
-      ((f.hash << 2) % @buckets.size)
+      ((f.hash >> 2) % @buckets.size)
     end
 
-    def delete(obj)
-      f = fingerprint(obj)
-      i1 = do_hash(obj)
-      i2 = (i1 ^ do_hash(f)) % @buckets.size
-      if (@buckets[i1] == f)
-        @buckets[i1] = 0
+    def delete(o)
+      (f,i1,i2) = hash_and_fingerprint(o)
+      replace(i1, 0, f) || replace(i2, 0, f)
+    end
+
+    def replace(index, value, value_to_check)
+      if(@buckets[index] == value_to_check)
+        @buckets[index] = value
+        return true
       end
-      if (@buckets[i2] == f)
-        @buckets[i2] = 0
-      end
+      false
+    end
+
+    def stats
+      empty = @buckets.select { |x| x == 0 }.size
+      occupied = @buckets.size - empty
+      "Total: #{@buckets.size} Empty: #{empty} Occupied: #{occupied} %: #{ sprintf "%.2f%", (occupied.to_f / @buckets.size * 100)}"
     end
   end
-  a = CuckooFilter::Filter.new ; a.insert("Fff")
-
   class FullError < StandardError
   end
 end
