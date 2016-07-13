@@ -1,4 +1,3 @@
-
 require 'digest/murmurhash'
 
 module Cuckoo
@@ -84,7 +83,9 @@ module Cuckoo
     def stats
       buckets = ''
       @buckets.each_with_index do |bucket, i|
-        buckets << "Bucket #{i}:\t\t#{sprintf '%.2f%', (bucket.size.to_f / @bucket_size) * 100}\n"
+        buckets << "Bucket #{i}:\t\t"
+        buckets << format('%.2f%', (bucket.size.to_f / @bucket_size) * 100)
+        buckets << "\n"
       end
       buckets
     end
