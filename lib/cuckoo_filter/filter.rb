@@ -20,7 +20,6 @@ module Cuckoo
     end
 
     def insert(o)
-      return 'already present' if lookup(o)
       (f, i1, i2) = hash_and_fingerprint(o)
       return true if add_to_bucket(i1, f) || add_to_bucket(i2, f)
       raise Cuckoo::FullError unless kick [i1, i2].sample, f
@@ -34,7 +33,12 @@ module Cuckoo
 
     def delete(o)
       (f, i1, i2) = hash_and_fingerprint(o)
-      @buckets[i1].delete(f) || @buckets[i2].delete(f)
+      return false unless @buckets[i1].include?(f) || @buckets[i2].include?(f)
+      [i1, i2].each do |i|
+        fingerprint_to_remove = @buckets[i].index(f)
+        @buckets[i].delete_at(fingerprint_to_remove) if fingerprint_to_remove
+      end
+      true
     end
 
     def stats
@@ -50,9 +54,9 @@ module Cuckoo
     private
 
     def hash_and_fingerprint(o)
-      hash = hash1(o)
+      hash = hash(o)
       f = fingerprint hash
-      i2 = (hash ^ hash2(f))
+      i2 = (hash ^ hash(f))
       [f, index(hash), index(i2)]
     end
 
@@ -72,21 +76,17 @@ module Cuckoo
       false
     end
 
-    def get_next_bucket(i, f, attempt)
-      #return i + attempt if @cuckoo_block && (attempt < @cuckoo_block_attempts)
-      index(i ^ hash2(f))
+    def get_next_bucket(i, f, _attempt)
+      # return i + attempt if @cuckoo_block && (attempt < @cuckoo_block_attempts)
+      index(i ^ hash(f))
     end
 
     def fingerprint(o)
       o & ((1 << @fingerprint_bits) - 1)
     end
 
-    def hash1(f)
+    def hash(f)
       Digest::MurmurHash64A.rawdigest(f.to_s)
-    end
-
-    def hash2(f)
-      Digest::MurmurHash64B.rawdigest(f.to_s)
     end
 
     def add_to_bucket(index, value)
