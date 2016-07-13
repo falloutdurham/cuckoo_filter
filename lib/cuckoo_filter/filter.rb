@@ -73,7 +73,7 @@ module Cuckoo
     end
 
     def get_next_bucket(i, f, attempt)
-      return i + attempt if @cuckoo_block && (attempt < @cuckoo_block_attempts)
+      #return i + attempt if @cuckoo_block && (attempt < @cuckoo_block_attempts)
       index(i ^ hash2(f))
     end
 
