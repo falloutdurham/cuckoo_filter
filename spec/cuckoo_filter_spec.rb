@@ -36,10 +36,10 @@ describe Cuckoo::Filter do
   end
 
   it 'prints stats' do
-    a = Cuckoo::Filter.new(buckets: 5, bucket_size: 1000)
-    (1..5000).each do |x|
+    a = Cuckoo::Filter.new(buckets: 4000, bucket_size: 4, bits: 16)
+    (1..5_000).each do |x|
       a.insert x
     end
-    expect(a.stats).to match(/Bucket 0:\t\t100.00%.*/)
+    expect(a.stats).to match(/Bucket 0:\t\t.*/)
   end
 end

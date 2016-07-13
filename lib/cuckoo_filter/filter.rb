@@ -3,9 +3,9 @@ require 'digest/murmurhash'
 module Cuckoo
   class Filter
     MAX_ATTEMPTS = 500
-    DEFAULT_BUCKET_SIZE = 5
+    DEFAULT_BUCKET_SIZE = 4
     DEFAULT_BUCKETS = 5
-    DEFAULT_FINGERPRINT_BITS = 64
+    DEFAULT_FINGERPRINT_BITS = 16
 
     def initialize(buckets: DEFAULT_BUCKETS, bucket_size: DEFAULT_BUCKET_SIZE,
                    max_attempts: MAX_ATTEMPTS, bits: DEFAULT_FINGERPRINT_BITS)
@@ -52,7 +52,7 @@ module Cuckoo
     end
 
     def fingerprint(o)
-      o >> 0 & ~(-1 >> @fingerprint_bits << @fingerprint_bits)
+      o & ((1 << @fingerprint_bits) - 1)
     end
 
     def hash1(f)
