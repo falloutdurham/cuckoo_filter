@@ -40,8 +40,8 @@ module Cuckoo
         entry = @buckets[i][random_entry]
         @buckets[i][random_entry] = f
         f = entry
-        new_f_i = (i ^ do_hash(f)) % @buckets.size
-        return true if add_to_bucket(new_f_i, f)
+        new_f_index = index(i ^ hash2(f))
+        return true if add_to_bucket(new_f_index, f)
       end
       false
     end
@@ -53,10 +53,6 @@ module Cuckoo
 
     def fingerprint(o)
       o >> 0 & ~(-1 >> @fingerprint_bits << @fingerprint_bits)
-    end
-
-    def do_hash(f)
-      Digest::MurmurHash64A.rawdigest(f.to_s)
     end
 
     def hash1(f)
