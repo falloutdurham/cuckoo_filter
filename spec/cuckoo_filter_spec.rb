@@ -42,4 +42,11 @@ describe Cuckoo::Filter do
     end
     expect(a.stats).to match(/Bucket 0:\t\t.*/)
   end
+
+  it 'works in adjacent block mode when asked' do
+    a = Cuckoo::Filter.new(buckets: 4000, cuckoo_block: true)
+    (1..5_000).each do |x|
+      a.insert x
+    end
+  end
 end

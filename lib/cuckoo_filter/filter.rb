@@ -6,13 +6,17 @@ module Cuckoo
     DEFAULT_BUCKET_SIZE = 4
     DEFAULT_BUCKETS = 5
     DEFAULT_FINGERPRINT_BITS = 16
+    BLOCK_ATTEMPTS = 3
 
     def initialize(buckets: DEFAULT_BUCKETS, bucket_size: DEFAULT_BUCKET_SIZE,
-                   max_attempts: MAX_ATTEMPTS, bits: DEFAULT_FINGERPRINT_BITS)
+                   max_attempts: MAX_ATTEMPTS, bits: DEFAULT_FINGERPRINT_BITS,
+                   cuckoo_block: false, cuckoo_block_attempts: BLOCK_ATTEMPTS)
       @buckets = Array.new(buckets) { [] }
       @bucket_size = bucket_size
       @max_attempts = max_attempts
       @fingerprint_bits = bits
+      @cuckoo_block = cuckoo_block
+      @cuckoo_block_attempts = cuckoo_block_attempts
     end
 
     def insert(o)
@@ -57,15 +61,20 @@ module Cuckoo
     end
 
     def kick(i, f)
-      (1..@max_attempts).each do
+      (1..@max_attempts).each do |attempt|
         random_entry = rand(@bucket_size)
         entry = @buckets[i][random_entry]
         @buckets[i][random_entry] = f
         f = entry
-        new_f_index = index(i ^ hash2(f))
+        new_f_index = get_next_bucket(i, f, attempt)
         return true if add_to_bucket(new_f_index, f)
       end
       false
+    end
+
+    def get_next_bucket(i, f, attempt)
+      return i + attempt if @cuckoo_block && (attempt < @cuckoo_block_attempts)
+      index(i ^ hash2(f))
     end
 
     def fingerprint(o)
