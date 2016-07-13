@@ -1,29 +1,38 @@
-module CuckooFilter
+
+require 'digest/murmurhash'
+
+module Cuckoo
   class Filter
     MAX_ATTEMPTS = 500
     DEFAULT_BUCKET_SIZE = 5
     DEFAULT_BUCKETS = 5
+    DEFAULT_FINGERPRINT_BITS = 64
 
-    def initialize(buckets: DEFAULT_BUCKETS, bucket_size: DEFAULT_BUCKET_SIZE, max_attempts: MAX_ATTEMPTS)
+    def initialize(buckets: DEFAULT_BUCKETS, bucket_size: DEFAULT_BUCKET_SIZE, 
+                   max_attempts: MAX_ATTEMPTS, bits: DEFAULT_FINGERPRINT_BITS)
       @buckets = Array.new(buckets) { [] }
       @bucket_size = bucket_size
       @max_attempts = max_attempts
+      @fingerprint_bits = bits
     end
 
     def insert(o)
-      return if lookup(o)
+      return "already present" if lookup(o)
       (f, i1, i2) = hash_and_fingerprint(o)
       return true if (add_to_bucket(i1, f) || add_to_bucket(i2, f))
-
-      raise CuckooFilter::FullError unless kick [i1, i2].sample, f
+      raise Cuckoo::FullError unless kick [i1, i2].sample, f
       true
     end
 
     def hash_and_fingerprint(o)
-      f = fingerprint o
-      i1 = do_hash(o)
-      i2 = (i1 ^ do_hash(f)) % @buckets.size
-      return f, i1, i2
+      hash = hash1(o)
+      f = fingerprint hash
+      i2 = (hash ^ hash2(f))
+      return f, index(hash), index(i2)
+    end
+
+    def index(i)
+      i % @buckets.size
     end
 
     def kick(i, f)
@@ -44,11 +53,19 @@ module CuckooFilter
     end
 
     def fingerprint(o)
-      o.hash 
-    end
+       o >> 0 & ~(-1 >> @fingerprint_bits << @fingerprint_bits)
+    end 
 
     def do_hash(f)
-      ((f.hash >> 2) % @buckets.size)
+      Digest::MurmurHash64A.rawdigest(f.to_s)
+    end
+
+    def hash1(f)
+      Digest::MurmurHash64A.rawdigest(f.to_s)
+    end
+
+    def hash2(f)
+      Digest::MurmurHash64B.rawdigest(f.to_s)
     end
 
     def delete(o)
