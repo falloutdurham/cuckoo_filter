@@ -36,7 +36,7 @@ describe Cuckoo::Filter do
   end
 
   it 'prints stats' do
-    a = Cuckoo::Filter.new(buckets: 4000, bucket_size: 4, bits: 16)
+    a = Cuckoo::Filter.new(buckets: 4000)
     (1..5_000).each do |x|
       a.insert x
     end
