@@ -23,6 +23,28 @@ module Cuckoo
       true
     end
 
+    def lookup(o)
+      (f, i1, i2) = hash_and_fingerprint(o)
+      (@buckets[i1].include? f) || (@buckets[i2].include? f)
+    end
+
+    def delete(o)
+      (f, i1, i2) = hash_and_fingerprint(o)
+      @buckets[i1].delete(f) || @buckets[i2].delete(f)
+    end
+
+    def stats
+      buckets = ''
+      @buckets.each_with_index do |bucket, i|
+        buckets << "Bucket #{i}:\t\t"
+        buckets << format('%.2f%', (bucket.size.to_f / @bucket_size) * 100)
+        buckets << "\n"
+      end
+      buckets
+    end
+
+    private
+
     def hash_and_fingerprint(o)
       hash = hash1(o)
       f = fingerprint hash
@@ -46,11 +68,6 @@ module Cuckoo
       false
     end
 
-    def lookup(o)
-      (f, i1, i2) = hash_and_fingerprint(o)
-      (@buckets[i1].include? f) || (@buckets[i2].include? f)
-    end
-
     def fingerprint(o)
       o & ((1 << @fingerprint_bits) - 1)
     end
@@ -63,27 +80,12 @@ module Cuckoo
       Digest::MurmurHash64B.rawdigest(f.to_s)
     end
 
-    def delete(o)
-      (f, i1, i2) = hash_and_fingerprint(o)
-      @buckets[i1].delete(f) || @buckets[i2].delete(f)
-    end
-
     def add_to_bucket(index, value)
       if @buckets[index].size < @bucket_size
         @buckets[index].push(value) unless @buckets[index].include?(value)
         return true
       end
       false
-    end
-
-    def stats
-      buckets = ''
-      @buckets.each_with_index do |bucket, i|
-        buckets << "Bucket #{i}:\t\t"
-        buckets << format('%.2f%', (bucket.size.to_f / @bucket_size) * 100)
-        buckets << "\n"
-      end
-      buckets
     end
   end
   class FullError < StandardError
