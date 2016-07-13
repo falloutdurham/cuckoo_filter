@@ -2,7 +2,6 @@ require 'spec_helper'
 require 'objspace'
 
 describe Cuckoo::Filter do
-
   let(:filter) { Cuckoo::Filter.new }
 
   it 'has a version number' do

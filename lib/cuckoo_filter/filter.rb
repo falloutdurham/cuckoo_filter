@@ -8,7 +8,7 @@ module Cuckoo
     DEFAULT_BUCKETS = 5
     DEFAULT_FINGERPRINT_BITS = 64
 
-    def initialize(buckets: DEFAULT_BUCKETS, bucket_size: DEFAULT_BUCKET_SIZE, 
+    def initialize(buckets: DEFAULT_BUCKETS, bucket_size: DEFAULT_BUCKET_SIZE,
                    max_attempts: MAX_ATTEMPTS, bits: DEFAULT_FINGERPRINT_BITS)
       @buckets = Array.new(buckets) { [] }
       @bucket_size = bucket_size
@@ -17,9 +17,9 @@ module Cuckoo
     end
 
     def insert(o)
-      return "already present" if lookup(o)
+      return 'already present' if lookup(o)
       (f, i1, i2) = hash_and_fingerprint(o)
-      return true if (add_to_bucket(i1, f) || add_to_bucket(i2, f))
+      return true if add_to_bucket(i1, f) || add_to_bucket(i2, f)
       raise Cuckoo::FullError unless kick [i1, i2].sample, f
       true
     end
@@ -28,7 +28,7 @@ module Cuckoo
       hash = hash1(o)
       f = fingerprint hash
       i2 = (hash ^ hash2(f))
-      return f, index(hash), index(i2)
+      [f, index(hash), index(i2)]
     end
 
     def index(i)
@@ -42,7 +42,7 @@ module Cuckoo
         @buckets[i][random_entry] = f
         f = entry
         new_f_i = (i ^ do_hash(f)) % @buckets.size
-        return true if (add_to_bucket(new_f_i, f))
+        return true if add_to_bucket(new_f_i, f)
       end
       false
     end
@@ -53,8 +53,8 @@ module Cuckoo
     end
 
     def fingerprint(o)
-       o >> 0 & ~(-1 >> @fingerprint_bits << @fingerprint_bits)
-    end 
+      o >> 0 & ~(-1 >> @fingerprint_bits << @fingerprint_bits)
+    end
 
     def do_hash(f)
       Digest::MurmurHash64A.rawdigest(f.to_s)
@@ -74,7 +74,7 @@ module Cuckoo
     end
 
     def add_to_bucket(index, value)
-      if(@buckets[index].size < @bucket_size)
+      if @buckets[index].size < @bucket_size
         @buckets[index].push(value) unless @buckets[index].include?(value)
         return true
       end
@@ -82,9 +82,9 @@ module Cuckoo
     end
 
     def stats
-      buckets = ""
+      buckets = ''
       @buckets.each_with_index do |bucket, i|
-        buckets << "Bucket #{i}:\t\t#{sprintf "%.2f%", (bucket.size.to_f / @bucket_size) * 100 }\n"
+        buckets << "Bucket #{i}:\t\t#{sprintf '%.2f%', (bucket.size.to_f / @bucket_size) * 100}\n"
       end
       buckets
     end
