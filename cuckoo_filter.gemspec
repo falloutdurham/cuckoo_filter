@@ -14,8 +14,6 @@ Gem::Specification.new do |spec|
   spec.homepage      = 'https://github.com/falloutdurham/cuckoo_filter'
   spec.license       = 'MIT'
 
-  # Prevent pushing this gem to RubyGems.org by setting 'allowed_push_host', or
-  # delete this section to allow pushing this gem to any host.
   if spec.respond_to?(:metadata)
     spec.metadata['allowed_push_host'] = "TODO: Set to 'http://mygemserver.com'"
   else

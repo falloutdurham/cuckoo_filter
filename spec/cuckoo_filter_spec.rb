@@ -37,9 +37,7 @@ describe Cuckoo::Filter do
 
   it 'prints stats' do
     a = Cuckoo::Filter.new(buckets: 4000)
-    (1..5_000).each do |x|
-      a.insert x
-    end
+    (1..5_000).each { |x| a.insert x }
     expect(a.stats).to match(/Bucket 0:\t\t.*/)
   end
 
